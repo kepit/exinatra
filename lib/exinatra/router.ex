@@ -4,6 +4,7 @@ defmodule Exinatra.Router do
       import unquote(__MODULE__)
       import Plug.Conn
       use Plug.Router
+      use Exinatra.ResponseHelpers
       @before_compile unquote(__MODULE__)
 
       plug Plug.Parsers, parsers: [:urlencoded, :multipart]
@@ -25,8 +26,7 @@ defmodule Exinatra.Router do
     end
   end
 
-  defmacro __before_compile__(env) do
-    module = env.module
+  defmacro __before_compile__(_) do
 
     quote do
       Plug.Router.match _ do

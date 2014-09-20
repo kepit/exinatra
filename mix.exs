@@ -26,6 +26,7 @@ defmodule Exinatra.Mixfile do
   # Type `mix help deps` for more examples and options
   defp deps do
     [{:cowboy, "~> 1.0.0"},
-   {:plug, "~> 0.7.0"}]
+    {:plug, "~> 0.7.0"},
+    {:jsex, "~> 2.0.0"}]
   end
 end
