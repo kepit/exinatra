@@ -16,15 +16,13 @@ defmodule Exinatra.Router do
 				conn = call_before_filters(conn)
 				conn = Map.get(conn.private, :plug_route).(conn)
 				conn = call_after_filters(conn)
-				IO.puts "Assings #{inspect conn.assigns}"
 				conn
 			end
 
 			def start() do
 				IO.puts "Running with Cowboy on http://localhost:4000"
-				Plug.Adapters.Cowboy.http __MODULE__, []
+				Plug.Adapters.Cowboy.http __MODULE__, [], [{:port, 8080}]
 			end
-
     end
   end
 
@@ -38,17 +36,20 @@ defmodule Exinatra.Router do
       end
 
 			defp call_before_filters(%Plug.Conn{state: :unset} = conn) do
-				conn = before_filter_fun().(conn)
+				if function_exported?(__MODULE__, :before_filter_fun,0) do
+					conn = before_filter_fun().(conn)
+				end
 				conn
 			end
 
 			defp call_after_filters(%Plug.Conn{} = conn) do
-				conn = after_filter_fun().(conn)
+				if function_exported?(__MODULE__, :after_filter_fun,0) do
+					conn = after_filter_fun().(conn)
+				end
 				conn
 			end
 
 		end
-		
   end
 
 	defmacro before_filter(expression) do
@@ -66,5 +67,5 @@ defmodule Exinatra.Router do
 			end
 		end
 	end
-
+  
 end
