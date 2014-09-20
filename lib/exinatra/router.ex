@@ -13,10 +13,10 @@ defmodule Exinatra.Router do
 			plug :dispatch
 
 			def dispatch(%Plug.Conn{assigns: assigns} = conn, _opts) do
-				call_before_filters(conn)
-				ret = Map.get(conn.private, :plug_route).(conn)
-				call_after_filters(conn)
-				ret
+				conn = call_before_filters(conn)
+				conn = Map.get(conn.private, :plug_route).(conn)
+				conn = call_after_filters(conn)
+				conn
 			end
 
 			def start() do
@@ -38,14 +38,16 @@ defmodule Exinatra.Router do
 
 			defp call_before_filters(%Plug.Conn{state: :unset} = conn) do
 				try do
-					before_filter_fun().(conn)
+					conn = before_filter_fun().(conn)
 				end
+				conn
 			end
 
-			defp call_after_filters(%Plug.Conn{state: :unset} = conn) do
+			defp call_after_filters(%Plug.Conn{} = conn) do
 				try do
-					after_filter_fun().(conn)
+					conn = after_filter_fun().(conn)
 				end
+				conn
 			end
 
 		end
