@@ -18,9 +18,9 @@ defmodule Exinatra.Router do
         conn
       end
 
-      def start() do
+      def start(port) do
         IO.puts "Running with Cowboy on http://localhost:4000"
-        Plug.Adapters.Cowboy.http __MODULE__, [], [{:port, 8080}]
+        Plug.Adapters.Cowboy.http __MODULE__, [], [{:port, port}]
       end
     end
   end
