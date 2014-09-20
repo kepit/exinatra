@@ -1,0 +1,2 @@
+defmodule Exinatra do
+end
