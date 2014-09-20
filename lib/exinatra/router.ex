@@ -16,6 +16,7 @@ defmodule Exinatra.Router do
 				conn = call_before_filters(conn)
 				conn = Map.get(conn.private, :plug_route).(conn)
 				conn = call_after_filters(conn)
+				IO.puts "Assings #{inspect conn.assigns}"
 				conn
 			end
 
@@ -37,16 +38,12 @@ defmodule Exinatra.Router do
       end
 
 			defp call_before_filters(%Plug.Conn{state: :unset} = conn) do
-				try do
-					conn = before_filter_fun().(conn)
-				end
+				conn = before_filter_fun().(conn)
 				conn
 			end
 
 			defp call_after_filters(%Plug.Conn{} = conn) do
-				try do
-					conn = after_filter_fun().(conn)
-				end
+				conn = after_filter_fun().(conn)
 				conn
 			end
 
