@@ -1,6 +1,7 @@
 defmodule Exinatra.Router do
   defmacro __using__(_) do
     quote do
+
       import unquote(__MODULE__)
       import Plug.Conn
       use Plug.Router
@@ -20,7 +21,7 @@ defmodule Exinatra.Router do
       end
 
       def start(port) do
-        IO.puts "Running with Cowboy on http://localhost:4000"
+        IO.puts "Running with Cowboy on http://localhost:#{port}"
         Plug.Adapters.Cowboy.http __MODULE__, [], [{:port, port}]
       end
     end
