@@ -32,6 +32,7 @@ defmodule Exinatra.Exceptions do
   `Plug.Conn`
   """
   def call(conn, opts) do
+    IO.inspect("EXCEPTIONS")
     try do
       super(conn, opts)
     catch
