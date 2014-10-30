@@ -3,42 +3,17 @@ defmodule Exinatra.Exceptions do
   Catches runtime exceptions for displaying an error screen instead of an empty
   response in dev environments.
   """
-  use Plug.Builder
-  import Plug.Conn
 
-  @doc """
-  Inits options on compile
 
-  ## Arguments
+  def handle(conn, kind, e) do
+        message = log_request(conn) <> log_cause(kind, e) <> log_stacktrace(System.stacktrace)
+	message = String.to_char_list(message)
+        :error_logger.error_msg(message)
+        conn
+   end
 
-  * `opts` - `Keyword`
 
-  ## Returns
-
-  `Keyword`
-  """
-  def init(opts), do: opts
-
-  @doc """
-  "Watches" a connection for catching exceptions
-
-  ## Arguments
-
-  * `conn` - `Plug.Conn`
-  * `opts` - `Keyword`
-
-  ## Returns
-
-  `Plug.Conn`
-  """
-  def call(conn, opts) do
-    IO.inspect("EXCEPTIONS")
-    try do
-      super(conn, opts)
-    catch
-      IO.inspect("ERROR...")
-
-      kind, e ->
+   def handle_html(conn, kind, e) do
         env = System.get_env
         assigns = [
           kind: get_kind(e, kind),
@@ -59,15 +34,9 @@ defmodule Exinatra.Exceptions do
           conn: conn
         ]
         eex_opts = [file: __ENV__.file, line: __ENV__.line, engine: EEx.SmartEngine]
-
-        message = log_request(conn) <> log_cause(kind, e) <> log_stacktrace(System.stacktrace)
-        message = List.from_char_data!(message)
-        :error_logger.error_msg(message)
-
-        %{ conn | state: :set}
-          |> put_resp_header("content-type", "text/html; charset=utf-8")
-          |> send_resp(500, opts[:dev_template] |> EEx.eval_string([assigns: assigns], eex_opts))
-    end
+	%{ conn | state: :set}
+          |> Plug.conn.put_resp_header("content-type", "text/html; charset=utf-8")
+          |> Plug.conn.send_resp(500, Exinatra.View.Exceptions |> EEx.eval_string([assigns: assigns], eex_opts))
   end
 
   defp get_kind(e, kind) when is_atom(e) do
@@ -77,6 +46,7 @@ defmodule Exinatra.Exceptions do
   #   atom_to_binary(e.__record__(:name))
   #     |> String.replace("Elixir.", "")
   # end
+
   defp get_kind(_e, kind) do
     kind
   end
@@ -95,18 +65,20 @@ defmodule Exinatra.Exceptions do
   end
 
   defp log_request(conn) do
-    "  Request: #{conn.method} /#{conn.path_info |> Enum.join("/")}\n"
+    "#{conn.method} /#{conn.path_info |> Enum.join("/")}\n"
   end
 
-  defp log_cause(:error, value) when is_atom(value) do
-    "  Cause: (Error) #{inspect value}\n"
-  end
-  # defp log_cause(:error, value) when is_record(value) do
-  #   "  Cause: (#{inspect value.__record__(:name)}) #{value.message}\n"
-  # end
-  defp log_cause(:error, value) do
-    "  Cause: (#{inspect value}) #{value.message}\n"
-  end
+
+
+#  defp log_cause(:error, value) when is_atom(value) do
+#    "  Cause: (Error) #{inspect value}\n"
+#  end
+#  defp log_cause(:error, value) when is_record(value) do
+#     "  Cause: (#{inspect value.__record__(:name)}) #{value.message}\n"
+#   end
+#  defp log_cause(:error, value) do
+#    "  Cause: (#{inspect value}) #{value.message}\n"
+#  end
 
   defp log_cause(kind, value) do
     "  Cause: (#{kind}) #{inspect(value)}\n"

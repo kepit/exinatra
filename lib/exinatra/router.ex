@@ -8,16 +8,22 @@ defmodule Exinatra.Router do
       use Exinatra.ResponseHelpers
       @before_compile unquote(__MODULE__)
 
-      plug Exinatra.Exceptions, dev_template: Exinatra.View.Exceptions.dev_template
       plug Plug.Parsers, parsers: [:urlencoded, :multipart]
+      plug Plug.Logger
 
       plug :match
       plug :dispatch
 
       def dispatch(%Plug.Conn{assigns: assigns} = conn, _opts) do
-        conn = call_before_filters(conn)
-        conn = Map.get(conn.private, :plug_route).(conn)
-        conn = call_after_filters(conn)
+
+        try do
+          conn = call_before_filters(conn)
+          conn = Map.get(conn.private, :plug_route).(conn)
+          conn = call_after_filters(conn)
+        catch
+          kind,e ->
+            conn = Exinatra.Exceptions.handle(conn, kind, e)
+        end
         conn
       end
 
