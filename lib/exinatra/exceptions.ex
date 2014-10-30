@@ -36,6 +36,8 @@ defmodule Exinatra.Exceptions do
     try do
       super(conn, opts)
     catch
+      IO.inspect("ERROR...")
+
       kind, e ->
         env = System.get_env
         assigns = [
