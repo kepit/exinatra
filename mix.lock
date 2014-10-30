@@ -2,5 +2,5 @@
   "cowlib": {:package, "1.0.0"},
   "jsex": {:package, "2.0.0"},
   "jsx": {:package, "2.1.1"},
-  "plug": {:package, "0.7.0"},
+  "plug": {:package, "0.8.2"},
   "ranch": {:package, "1.0.0"}}

@@ -8,7 +8,7 @@ defmodule Exinatra.Router do
       use Exinatra.ResponseHelpers
       @before_compile unquote(__MODULE__)
 
-      plug Exinatra.Exceptions, dev_template: Exinatra.View.Exceptions
+      plug Exinatra.Exceptions, dev_template: Exinatra.View.Exceptions.dev_template
       plug Plug.Parsers, parsers: [:urlencoded, :multipart]
 
       plug :match
