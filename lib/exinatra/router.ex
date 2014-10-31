@@ -28,8 +28,13 @@ defmodule Exinatra.Router do
       end
 
       def start(port) do
-        IO.puts "Running with Cowboy on http://localhost:#{port}"
+        IO.puts "Running #{__MODULE__} on port: #{port}"
         Plug.Adapters.Cowboy.http __MODULE__, [], [{:port, port}]
+      end
+
+      def start_link(args) do
+        IO.puts "Running #{__MODULE__} on port: #{args[:port]}"
+	Plug.Adapters.Cowboy.http __MODULE__, [], args
       end
     end
   end
