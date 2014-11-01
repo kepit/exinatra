@@ -8,6 +8,7 @@ defmodule Exinatra.Router do
       use Exinatra.ResponseHelpers
       @before_compile unquote(__MODULE__)
 
+      plug Exinatra.HotCodeReload
       plug Plug.Parsers, parsers: [:urlencoded, :multipart]
       plug Plug.Logger
 
