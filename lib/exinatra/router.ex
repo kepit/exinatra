@@ -4,6 +4,7 @@ defmodule Exinatra.Router do
 
       import unquote(__MODULE__)
       import Plug.Conn
+      import Logger
       use Plug.Router
       use Exinatra.ResponseHelpers
       @before_compile unquote(__MODULE__)
@@ -29,12 +30,12 @@ defmodule Exinatra.Router do
       end
 
       def start(port) do
-        IO.puts "Running #{__MODULE__} on port: #{port}"
+        Logger.info "Running #{__MODULE__} on port: #{port}"
         Plug.Adapters.Cowboy.http __MODULE__, [], [{:port, port}]
       end
 
       def start_link(args) do
-        IO.puts "Running #{__MODULE__} on port: #{args[:port]}"
+        Logger.info "Running #{__MODULE__} on port: #{args[:port]}"
 	Plug.Adapters.Cowboy.http __MODULE__, [], args
       end
     end

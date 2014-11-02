@@ -3,12 +3,12 @@ defmodule Exinatra.Exceptions do
   Catches runtime exceptions for displaying an error screen instead of an empty
   response in dev environments.
   """
-
+  import Logger
 
   def handle(conn, kind, e) do
         message = log_request(conn) <> log_cause(kind, e) <> log_stacktrace(System.stacktrace)
 	message = String.to_char_list(message)
-        :error_logger.error_msg(message)
+        Logger.error(message)
         conn
    end
 
