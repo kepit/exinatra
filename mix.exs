@@ -27,6 +27,8 @@ defmodule Exinatra.Mixfile do
   defp deps do
     [{:cowboy, "~> 1.0"},
     {:plug, "~> 0.8.1"},
-    {:jsex, "~> 2.0.0"}]
+    {:jsex, "~> 2.0.0"},
+    {:plug_basic_auth, github: "jui/plug_basic_auth"}
+    ]
   end
 end

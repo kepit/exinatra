@@ -1,7 +1,7 @@
 defmodule Exinatra do
-  defmacro __using__(_) do
+  defmacro __using__(opts) do
     quote do
-      use Exinatra.Router
+      use Exinatra.Router, auth: unquote(opts[:auth])
     end
   end
 end

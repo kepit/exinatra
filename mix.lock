@@ -3,4 +3,5 @@
   "jsex": {:package, "2.0.0"},
   "jsx": {:package, "2.1.1"},
   "plug": {:package, "0.8.2"},
+  "plug_basic_auth": {:git, "git://github.com/jui/plug_basic_auth.git", "2f0d952f582b386fb65570aefa0f5cdcfae56eeb", []},
   "ranch": {:package, "1.0.0"}}

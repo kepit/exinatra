@@ -1,5 +1,5 @@
 defmodule Exinatra.Router do
-  defmacro __using__(_) do
+  defmacro __using__(opts) do
     quote do
 
       import unquote(__MODULE__)
@@ -7,11 +7,18 @@ defmodule Exinatra.Router do
       import Logger
       use Plug.Router
       use Exinatra.ResponseHelpers
+
       @before_compile unquote(__MODULE__)
 
 #      plug Exinatra.HotCodeReload
       plug Plug.Parsers, parsers: [:urlencoded, :multipart]
       plug Plug.Logger
+
+      use PlugBasicAuth.Helpers
+
+      if unquote(opts[:auth]) == true do
+  	plug PlugBasicAuth, module: __MODULE__
+      end
 
       plug :match
       plug :dispatch
