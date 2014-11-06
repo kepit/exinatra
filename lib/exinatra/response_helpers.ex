@@ -126,7 +126,6 @@ defmodule Exinatra.ResponseHelpers do
 #    opts = [status: 200] |> Keyword.merge opts
 #    html = Sugar.Views.Finder.one("lib/#{Mix.Project.config[:app]}/views", template_key)
 #    |> Sugar.Templates.render(assigns)
-
 #    conn
 #    |> put_resp_content_type_if_not_sent(opts[:content_type] || "text/html")
 #    |> send_resp_if_not_sent(opts[:status], html)

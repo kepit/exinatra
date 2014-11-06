@@ -1,15 +1,18 @@
 defmodule Exinatra.Router do
   defmacro __using__(opts) do
-    quote do
+    quote location: :keep do
 
-      import unquote(__MODULE__)
+      import Exinatra.Router
+      @before_compile Exinatra.Router
+
+      use Plug.Builder
+
       import Plug.Conn
       import Logger
-
-      use Plug.Router
+      
+#      use Exinatra.Router
       use Exinatra.ResponseHelpers
 
-      @before_compile unquote(__MODULE__)
 
       if unquote(opts[:code_reload]) == true do
         plug Exinatra.HotCodeReload
@@ -37,9 +40,7 @@ defmodule Exinatra.Router do
 
 
       def match(conn, _opts) do
-        Plug.Conn.put_private(conn,
-                              :plug_route,
-                              do_match(conn.method, conn.path_info))
+        Plug.Conn.put_private(conn, :plug_route, do_match(conn.method, conn.path_info))
       end
 
       
@@ -74,10 +75,12 @@ defmodule Exinatra.Router do
   defmacro __before_compile__(_) do
 
     quote do
-      Plug.Router.match _ do
-        conn = var!(conn)
-        send_resp(conn, 404, "Not found")
-      end
+      import Exinatra.Router, only: []
+
+      #Exinatra.Router.match _ do
+      #  conn = var!(conn)
+      #  send_resp(conn, 404, "Not found")
+      #end
 
       defp call_before_filters(%Plug.Conn{state: :unset} = conn) do
         if function_exported?(__MODULE__, :before_filter_fun,0) do
@@ -112,5 +115,166 @@ defmodule Exinatra.Router do
       end
     end
   end
+
+  
+
+  ## Match
+
+  @doc """
+  Main API to define routes. It accepts an expression representing
+  the path and many options allowing the match to be configured.
+  ## Examples
+      match "/foo/bar", via: :get do
+        send_resp(conn, 200, "hello world")
+      end
+  ## Options
+  `match` accepts the following options:
+  * `:via` - matches the route against some specific HTTP methods
+  * `:do` - contains the implementation to be invoked in case
+    the route matches
+  """
+  defmacro match(expression, options, opts \\ [], contents \\ []) do
+    compile(:build_match, expression, Keyword.merge(contents, options), opts, __CALLER__)
+  end
+
+  @doc """
+  Dispatches to the path only if it is get request.
+  See `match/3` for more examples.
+  """
+  defmacro get(path, opts \\ [], contents) do
+    compile(:build_match, path, Keyword.put(contents, :via, :get), opts, __CALLER__)
+  end
+
+  @doc """
+  Dispatches to the path only if it is post request.
+  See `match/3` for more examples.
+  """
+  defmacro post(path, opts \\ [], contents) do
+    compile(:build_match, path, Keyword.put(contents, :via, :post), opts, __CALLER__)
+  end
+
+  @doc """
+  Dispatches to the path only if it is put request.
+  See `match/3` for more examples.
+  """
+  defmacro put(path, opts \\ [], contents) do
+    compile(:build_match, path, Keyword.put(contents, :via, :put), opts, __CALLER__)
+  end
+
+  @doc """
+  Dispatches to the path only if it is patch request.
+  See `match/3` for more examples.
+  """
+  defmacro patch(path, opts \\ [], contents) do
+    compile(:build_match, path, Keyword.put(contents, :via, :patch), opts, __CALLER__)
+  end
+
+  @doc """
+  Dispatches to the path only if it is delete request.
+  See `match/3` for more examples.
+  """
+  defmacro delete(path, opts \\ [], contents) do
+    compile(:build_match, path, Keyword.put(contents, :via, :delete), opts, __CALLER__)
+  end
+
+  @doc """
+  Dispatches to the path only if it is options request.
+  See `match/3` for more examples.
+  """
+  defmacro options(path, opts \\ [], contents) do
+    compile(:build_match, path, Keyword.put(contents, :via, :options), opts, __CALLER__)
+  end
+
+  @doc """
+  Forwards requests to another Plug. The path_info of the forwarded
+  connection will exclude the portion of the path specified in the
+  call to `forward`.
+  ## Examples
+      forward "/users", to: UserRouter
+  ## Options
+  `forward` accepts the following options:
+  * `:to` - a Plug where the requests will be forwarded
+  All remaining options are passed to the underlying plug.
+  """
+  defmacro forward(path, options) when is_binary(path) do
+    quote do
+      {target, options} = Keyword.pop(unquote(options), :to)
+      if is_nil(target) or !is_atom(target) do
+        raise ArgumentError, message: "expected :to to be an alias or an atom"
+      end
+
+      @plug_forward_target target
+      @plug_forward_opts   target.init(options)
+
+      match unquote(path <> "/*glob") do
+        Plug.Router.Utils.forward(var!(conn), var!(glob), @plug_forward_target, @plug_forward_opts)
+      end
+    end
+  end
+
+  ## Match Helpers
+
+  # Entry point for both forward and match that is actually
+  # responsible to compile the route.
+  defp compile(builder, expr, options, opts, caller) do
+    methods = options[:via]
+    body    = options[:do]
+
+    unless body do
+      raise ArgumentError, message: "expected :do to be given as option"
+    end
+
+    {method, guard} = convert_methods(List.wrap(methods))
+    {path, guards}  = extract_path_and_guards(expr, guard)
+    {_vars, match}  = apply Plug.Router.Utils, builder, [Macro.expand(path, caller)]
+
+    unless is_nil(opts[:content_type]) do
+      set_content_type = quote do 
+        var!(conn) = Plug.Conn.put_resp_content_type(var!(conn), unquote(opts[:content_type]))
+      end
+    else
+      set_content_type = quote do
+      end
+    end
+
+    quote do
+      defp do_match(unquote(method), unquote(match)) when unquote(guards) do
+        fn var!(conn) ->
+          unquote(set_content_type)
+          unquote(body)
+        end
+      end
+    end
+  end
+
+  # Convert the verbs given with :via into a variable
+  # and guard set that can be added to the dispatch clause.
+  defp convert_methods([]) do
+    {quote(do: _), true}
+  end
+
+  defp convert_methods([method]) do
+    {Plug.Router.Utils.normalize_method(method), true}
+  end
+
+  defp convert_methods(methods) do
+    methods = Enum.map methods, &Plug.Router.Utils.normalize_method(&1)
+    var = quote do: method
+    {var, quote(do: unquote(var) in unquote(methods))}
+  end
+
+  # Extract the path and guards from the path.
+  defp extract_path_and_guards({:when, _, [path, guards]}, true) do
+    {path, guards}
+  end
+
+  defp extract_path_and_guards({:when, _, [path, guards]}, extra_guard) do
+    {path, {:and, [], [guards, extra_guard]}}
+  end
+
+  defp extract_path_and_guards(path, extra_guard) do
+    {path, extra_guard}
+  end
+
 
 end
