@@ -5,26 +5,49 @@ defmodule Exinatra.Router do
       import unquote(__MODULE__)
       import Plug.Conn
       import Logger
+
       use Plug.Router
       use Exinatra.ResponseHelpers
 
       @before_compile unquote(__MODULE__)
 
-#      plug Exinatra.HotCodeReload
-      plug Plug.Parsers, parsers: [:urlencoded, :multipart]
-      plug Plug.Logger
+      if unquote(opts[:code_reload]) == true do
+        plug Exinatra.HotCodeReload
+      end
 
+      plug Plug.Parsers, parsers: [:urlencoded, :multipart]
+
+      if unquote(opts[:logger]) != false do
+        plug Plug.Logger
+      end
+      
       use PlugBasicAuth.Helpers
 
       if unquote(opts[:auth]) == true do
-  	plug PlugBasicAuth, module: __MODULE__
+  	    plug PlugBasicAuth, module: __MODULE__
       end
 
       plug :match
-      plug :dispatch
 
+      if unquote(opts[:callbacks]) == false do
+        plug :dispatch
+      else
+        plug :dispatch_with_callbacks
+      end
+
+
+      def match(conn, _opts) do
+        Plug.Conn.put_private(conn,
+                              :plug_route,
+                              do_match(conn.method, conn.path_info))
+      end
+
+      
       def dispatch(%Plug.Conn{assigns: assigns} = conn, _opts) do
+        Map.get(conn.private, :plug_route).(conn)
+      end
 
+      def dispatch_with_callbacks(%Plug.Conn{assigns: assigns} = conn, _opts) do
         try do
           conn = call_before_filters(conn)
           conn = Map.get(conn.private, :plug_route).(conn)
@@ -43,7 +66,7 @@ defmodule Exinatra.Router do
 
       def start_link(args) do
         Logger.info "Running #{__MODULE__} on port: #{args[:port]}"
-	Plug.Adapters.Cowboy.http __MODULE__, [], args
+	      Plug.Adapters.Cowboy.http __MODULE__, [], args
       end
     end
   end
@@ -58,14 +81,14 @@ defmodule Exinatra.Router do
 
       defp call_before_filters(%Plug.Conn{state: :unset} = conn) do
         if function_exported?(__MODULE__, :before_filter_fun,0) do
-          conn = before_filter_fun().(conn)
+          conn = apply(__MODULE__, :before_filter_fun,[]).(conn)
         end
         conn
       end
 
       defp call_after_filters(%Plug.Conn{} = conn) do
         if function_exported?(__MODULE__, :after_filter_fun,0) do
-          conn = after_filter_fun().(conn)
+          conn = apply(__MODULE__, :after_filter_fun,[]).(conn)
         end
         conn
       end
@@ -73,6 +96,7 @@ defmodule Exinatra.Router do
     end
   end
 
+  
   defmacro before_filter(expression) do
     quote do
       def before_filter_fun() do
