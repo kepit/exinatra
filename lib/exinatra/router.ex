@@ -9,8 +9,6 @@ defmodule Exinatra.Router do
 
       import Plug.Conn
       import Logger
-      
-#      use Exinatra.Router
       use Exinatra.ResponseHelpers
 
 
@@ -18,7 +16,7 @@ defmodule Exinatra.Router do
         plug Exinatra.HotCodeReload
       end
 
-      plug Plug.Parsers, parsers: [:urlencoded, :multipart]
+      plug Plug.Parsers, parsers: [:urlencoded, :multipart, :json], json_decoder: JSEX
 
       if unquote(opts[:logger]) != false do
         plug Plug.Logger
@@ -31,6 +29,18 @@ defmodule Exinatra.Router do
       end
 
       plug :match
+      plug :fetch_params
+      plug :fetch_cookies
+
+      if unquote(opts[:session]) == true do
+        plug :put_secret_key_base
+        plug Plug.Session
+        plug :fetch_session
+      end
+
+      def put_secret_key_base(conn, _) do
+        put_in conn.secret_key_base, "-- LONG STRING WITH AT LEAST 64 BYTES --"
+      end
 
       if unquote(opts[:callbacks]) == false do
         plug :dispatch
@@ -38,11 +48,9 @@ defmodule Exinatra.Router do
         plug :dispatch_with_callbacks
       end
 
-
       def match(conn, _opts) do
         Plug.Conn.put_private(conn, :plug_route, do_match(conn.method, conn.path_info))
       end
-
       
       def dispatch(%Plug.Conn{assigns: assigns} = conn, _opts) do
         Map.get(conn.private, :plug_route).(conn)
@@ -67,7 +75,7 @@ defmodule Exinatra.Router do
 
       def start_link(args) do
         Logger.info "Running #{__MODULE__} on port: #{args[:port]}"
-	      Plug.Adapters.Cowboy.http __MODULE__, [], args
+        Plug.Adapters.Cowboy.http __MODULE__, [], args
       end
     end
   end
