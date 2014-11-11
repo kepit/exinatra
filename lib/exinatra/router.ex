@@ -28,19 +28,24 @@ defmodule Exinatra.Router do
   	    plug PlugBasicAuth, module: __MODULE__
       end
 
-      plug :match
-      plug :fetch_params
-      plug :fetch_cookies
-
       if unquote(opts[:session]) == true do
         plug :put_secret_key_base
-        plug Plug.Session
-        plug :fetch_session
+        plug Plug.Session, store: :cookie, key: unquote(opts[:session_key]), encryption_salt: unquote(opts[:session_encryption_salt]), signing_salt: unquote(opts[:session_signing_salt]), encrypt: false
       end
 
       def put_secret_key_base(conn, _) do
-        put_in conn.secret_key_base, "-- LONG STRING WITH AT LEAST 64 BYTES --"
+        put_in conn.secret_key_base, unquote(opts[:session_secret])
       end
+
+
+
+      plug :fetch_params
+      plug :fetch_cookies
+      if unquote(opts[:session]) == true do
+        plug :fetch_session
+      end
+
+      plug :match
 
       if unquote(opts[:callbacks]) == false do
         plug :dispatch
