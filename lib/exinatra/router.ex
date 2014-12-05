@@ -11,11 +11,6 @@ defmodule Exinatra.Router do
       import Logger
       use Exinatra.ResponseHelpers
 
-
-      if unquote(opts[:code_reload]) == true do
-        plug Exinatra.HotCodeReload
-      end
-
       plug Plug.Parsers, parsers: [:urlencoded, :multipart, :json], json_decoder: JSEX
 
       if unquote(opts[:logger]) != false do
