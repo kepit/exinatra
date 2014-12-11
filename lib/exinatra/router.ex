@@ -13,6 +13,8 @@ defmodule Exinatra.Router do
 
       use PlugBasicAuth.Helpers
 
+      plug Plug.Parsers, parsers: [:urlencoded, :multipart, :json], json_decoder: JSEX
+
       if unquote(opts[:auth]) == true do
   	    plug PlugBasicAuth, module: __MODULE__
       end
@@ -25,6 +27,7 @@ defmodule Exinatra.Router do
       def put_secret_key_base(conn, _) do
         put_in conn.secret_key_base, unquote(opts[:session_secret])
       end
+
       
       plug :match
 
