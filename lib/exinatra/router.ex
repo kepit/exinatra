@@ -50,7 +50,6 @@ defmodule Exinatra.Router do
       plug :test
 
       defp test(conn, opts) do
-        IO.inspect(opts)
         conn
       end
 
