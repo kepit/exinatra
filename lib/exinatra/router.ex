@@ -13,7 +13,7 @@ defmodule Exinatra.Router do
 
       use PlugBasicAuth.Helpers
 
-      plug Plug.Parsers, parsers: [:urlencoded, :multipart, :json], json_decoder: JSEX
+      plug Plug.Parsers, parsers: [:urlencoded, :multipart, :json], json_decoder: Json
 
       if unquote(opts[:auth]) == true do
   	    plug PlugBasicAuth, module: __MODULE__
