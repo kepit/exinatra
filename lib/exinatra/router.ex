@@ -46,13 +46,7 @@ defmodule Exinatra.Router do
       unless unquote(opts[:callbacks]) == false do
         plug :call_after_filters
       end
-
-      plug :test
-
-      defp test(conn, opts) do
-        conn
-      end
-
+      
       defp call_before_filters(%Plug.Conn{state: :unset} = conn, opts) do
         if function_exported?(__MODULE__, :before_filter_fun,0) do
           conn = apply(__MODULE__, :before_filter_fun,[]).(conn)
@@ -84,11 +78,7 @@ defmodule Exinatra.Router do
 #      import Exinatra.Router, only: []
 #    end
 # end
- 
-  
- 
-  
-  
+
   defmacro before_filter(expression) do
     quote do
       def before_filter_fun() do
