@@ -46,7 +46,30 @@ defmodule Exinatra.Router do
       unless unquote(opts[:callbacks]) == false do
         plug :call_after_filters
       end
-      
+
+      defp dispatch(%Plug.Conn{assigns: assigns} = conn, _opts) do
+        try do
+          Map.get(conn.private, :plug_route).(conn)
+        catch
+          kind, reason ->
+            Logger.error Exception.format(kind, reason)
+            conn
+            |> Plug.Conn.put_status(error_status(kind, reason))
+            |> Plug.Conn.send_resp(500, "Internal server error")
+            |> Plug.Conn.halt
+        rescue
+          e ->
+            Logger.error Exception.format(:error, e)
+            conn
+            |> Plug.Conn.send_resp(500,"Internal server error")
+            |> Plug.Conn.halt
+        end
+      end
+
+      defp error_status(:error, error),  do: Plug.Exception.status(error)
+      defp error_status(:throw, _throw), do: 500
+      defp error_status(:exit, _exit),   do: 500
+     
       defp call_before_filters(%Plug.Conn{state: :unset} = conn, opts) do
         if function_exported?(__MODULE__, :before_filter_fun,0) do
           conn = apply(__MODULE__, :before_filter_fun,[]).(conn)
