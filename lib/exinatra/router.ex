@@ -29,8 +29,9 @@ defmodule Exinatra.Router do
       end
 
       
-      plug :match
+      plug :match_with_errors
 
+      
       plug :fetch_params
       plug :fetch_cookies
       if unquote(opts[:session]) == true do
@@ -41,20 +42,34 @@ defmodule Exinatra.Router do
         plug :call_before_filters
       end
 
-      plug :dispatch
+      plug :dispatch_with_errors
 
       unless unquote(opts[:callbacks]) == false do
         plug :call_after_filters
       end
 
-      defp dispatch(%Plug.Conn{assigns: assigns} = conn, _opts) do
+
+      defp match_with_errors(conn, _opts) do
+        try do
+          Plug.Conn.put_private(conn,
+                                :plug_route,
+                                do_match(conn.method, conn.path_info, conn.host))
+        catch
+          kind, reason ->
+            Logger.error Exception.format(kind, reason)
+            conn 
+            |> Plug.Conn.send_resp(404, "Not found")
+            |> Plug.Conn.halt
+        end
+      end
+
+      defp dispatch_with_errors(%Plug.Conn{assigns: assigns} = conn, _opts) do
         try do
           Map.get(conn.private, :plug_route).(conn)
         catch
           kind, reason ->
             Logger.error Exception.format(kind, reason)
             conn
-            |> Plug.Conn.put_status(error_status(kind, reason))
             |> Plug.Conn.send_resp(500, "Internal server error")
             |> Plug.Conn.halt
         rescue
