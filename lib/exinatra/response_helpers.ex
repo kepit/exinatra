@@ -10,7 +10,7 @@ defmodule Exinatra.ResponseHelpers do
 
 
   def delegate(method, args, conn) do
-    do_match(method, args, conn.host).(conn)
+    __MODULE__.do_match(method, args, conn.host).(conn)
   end
 
 
