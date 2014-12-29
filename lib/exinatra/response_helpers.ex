@@ -8,9 +8,10 @@ defmodule Exinatra.ResponseHelpers do
     end
   end
 
-
-  def delegate(method, args, conn) do
-    __MODULE__.do_match(method, args, conn.host).(conn)
+  defmacro delegate(method, args, conn) do
+    quote do
+      do_match(unquote(method), unquote(args), unquote(conn).host).(unquote(conn))
+    end
   end
 
 
