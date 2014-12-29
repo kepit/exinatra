@@ -8,6 +8,12 @@ defmodule Exinatra.ResponseHelpers do
     end
   end
 
+
+  def delegate(method, args, conn) do
+    do_match(method, args, conn.host).(conn)
+  end
+
+
   @doc """
   sets connection status
 
