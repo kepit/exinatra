@@ -29,7 +29,7 @@ defmodule Exinatra.Router do
       end
 
       if unquote(opts[:static]) == true do
-	plug Plug.Static, at: unquote(opts[:static_url]) from: unquote(opts[:static_path])
+	plug Plug.Static, at: unquote(opts[:static_url]), from: unquote(opts[:static_path])
       end
 
       plug :match_with_errors
