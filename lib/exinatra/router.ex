@@ -28,7 +28,10 @@ defmodule Exinatra.Router do
         put_in conn.secret_key_base, unquote(opts[:session_secret])
       end
 
-      
+      if unquote(opts[:static]) == true do
+	plug Plug.Static, at: unquote(opts[:static_url]) from: unquote(opts[:static_path])
+      end
+
       plug :match_with_errors
 
       
