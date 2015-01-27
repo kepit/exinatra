@@ -12,6 +12,11 @@ defmodule Exinatra.Router do
       use Exinatra.ResponseHelpers
 
       use PlugBasicAuth.Helpers
+      
+      if unquote(opts[:logger]) != false do
+        plug Plug.Logger
+      end
+
 
       plug Plug.Parsers, parsers: [:urlencoded, :multipart, :json], json_decoder: Json
 
