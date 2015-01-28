@@ -14,7 +14,7 @@ defmodule Exinatra.Router do
       use PlugBasicAuth.Helpers
       
       if unquote(opts[:logger]) != false do
-        plug Plug.Logger
+        plug Exinatra.Logger
       end
 
 
