@@ -50,10 +50,10 @@ defmodule Exinatra.Logger do
     conn
     |> Conn.put_resp_header("x-request-id", request_id)
     |> Conn.register_before_send(fn conn ->
-         Logger.info fn ->
+         Logger.debug fn ->
            after_time = :os.timestamp()
            diff = :timer.now_diff(after_time, before_time)
-           [formatted_diff(diff), ?\s, Integer.to_string(conn.status), ?\s, conn.method, ?\s, Conn.full_path(conn)]
+           ["[",formatted_diff(diff),"]", ?\s, Integer.to_string(conn.status), ?\s, conn.method, ?\s, Conn.full_path(conn)]
          end
          conn
        end)
