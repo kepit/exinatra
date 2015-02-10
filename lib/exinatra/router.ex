@@ -17,8 +17,9 @@ defmodule Exinatra.Router do
         plug Exinatra.Logger
       end
 
-
-      plug Plug.Parsers, parsers: [:urlencoded, :multipart, :json], json_decoder: Json
+      if unquote(opts[:parsers]) != false do
+        plug Plug.Parsers, parsers: [:urlencoded, :multipart, :json], json_decoder: Json
+      end
 
       if unquote(opts[:auth]) == true do
   	    plug PlugBasicAuth, module: __MODULE__
