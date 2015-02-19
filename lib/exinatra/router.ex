@@ -18,7 +18,7 @@ defmodule Exinatra.Router do
       end
 
       if unquote(opts[:parsers]) != false do
-        plug Plug.Parsers, parsers: [:urlencoded, :multipart, :json], json_decoder: Json
+        plug Plug.Parsers, parsers: [:urlencoded, :multipart, :json], json_decoder: Json, length: 8_000_000_000
       end
 
       if unquote(opts[:auth]) == true do
