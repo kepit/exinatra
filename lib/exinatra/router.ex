@@ -6,7 +6,7 @@ defmodule Exinatra.Router do
       import Logger
       import Plug.Conn
 
-#      @before_compile Exinatra.Router
+      @before_compile Exinatra.Router
       
       use Plug.Router
       use Exinatra.ResponseHelpers
@@ -35,7 +35,7 @@ defmodule Exinatra.Router do
       end
 
       if unquote(opts[:static]) == true do
-	plug Plug.Static, at: unquote(opts[:static_url]), from: unquote(opts[:static_path])
+	      plug Plug.Static, at: unquote(opts[:static_url]), from: unquote(opts[:static_path])
       end
 
       plug :match_with_errors
@@ -49,6 +49,7 @@ defmodule Exinatra.Router do
 
       unless unquote(opts[:callbacks]) == false do
         plug :call_before_filters
+        plug :call_before_match
       end
 
       plug :dispatch_with_errors
@@ -90,6 +91,10 @@ defmodule Exinatra.Router do
         end
       end
 
+      defp call_before_match(conn, _opts) do
+        do_before_match(conn.method, conn.path_info).(conn)[:do]
+      end
+
       defp error_status(:error, error),  do: Plug.Exception.status(error)
       defp error_status(:throw, _throw), do: 500
       defp error_status(:exit, _exit),   do: 500
@@ -120,11 +125,54 @@ defmodule Exinatra.Router do
     end
   end
 
-# defmacro __before_compile__(_) do
-#   quote do
-#      import Exinatra.Router, only: []
-#    end
-# end
+  defmacro __before_compile__(_) do
+    quote do
+      def do_before_match(_,_) do
+        fn(conn) -> [do: conn] end
+      end
+    end
+  end
+
+  defp extract_path({:_, _, var}) when is_atom(var), do: "/*_path"
+  defp extract_path(path), do: path
+
+  defp compile_before_match(method, path, contents) do
+    {_vars, match} = Plug.Router.Utils.build_path_match(extract_path(path))
+    quote do
+      def do_before_match(unquote(method),unquote(match)) do
+        fn (var!(conn)) -> unquote(contents) end
+      end
+    end
+  end
+  
+  defmacro before_match(method, path, contents) do
+    compile_before_match(method, path, contents)
+  end
+
+  defmacro before_get(path, contents) do
+    compile_before_match("GET", path, contents)
+  end
+
+  defmacro before_post(path, contents) do
+    compile_before_match("POST", path, contents)
+  end
+
+  defmacro before_put(path, contents) do
+    compile_before_match("PUT", path, contents)
+  end
+
+  defmacro before_patch(path, contents) do
+    compile_before_match("PATCH", path, contents)
+  end
+
+  defmacro before_delete(path, contents) do
+    compile_before_match("DELETE", path, contents)
+  end
+
+  defmacro before_options(path, contents) do
+    compile_before_match("OPTIONS", path, contents)
+  end
+
 
   defmacro before_filter(expression) do
     quote do
